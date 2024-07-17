@@ -46,11 +46,16 @@ st.markdown("""
 st.markdown('<h1 class="title">Data Mining Project</h1>', unsafe_allow_html=True)
 st.markdown('<p class="description">By Issam Falih</p>', unsafe_allow_html=True)
 
+<<<<<<< HEAD
+=======
+# Header for data exploration section
+>>>>>>> 537b4d5dd805037c88139954eaef3c4daa11f941
 st.markdown('<h2 class="header">Part I: Initial Data Exploration</h2>', unsafe_allow_html=True)
 uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
 
 if uploaded_file:
     file_type = uploaded_file.name.split('.')[-1]
+<<<<<<< HEAD
     separator_option = st.selectbox("Select the separator used in your file", (",", ";", "\t", " "))
     
     if file_type == 'csv':
@@ -63,6 +68,23 @@ if uploaded_file:
             data[col] = data[col].str.replace(',', '.').astype(float)
         except:
             pass
+=======
+
+    # Header and separator options
+    header_option = st.selectbox("Does your file have a header?", ("Yes", "No"))
+    separator_option = st.selectbox("Select the separator used in your file", (",", ";", "\t", " "))
+
+    header = 0 if header_option == "Yes" else None
+
+    if file_type == 'csv':
+        data = pd.read_csv(uploaded_file, header=header, sep=separator_option)
+    else:
+        data = pd.read_excel(uploaded_file, header=header)
+
+    for col in data.columns:
+        if data[col].dtype == 'object':
+            data[col] = data[col].str.replace(',', '.').astype(float)
+>>>>>>> 537b4d5dd805037c88139954eaef3c4daa11f941
         
     # Using columns for better layout
     col1, col2 = st.columns(2)
@@ -136,6 +158,7 @@ if uploaded_file:
     # Part III: Visualization of the cleaned data
     st.markdown('<h2 class="header">Part III: Visualization of the cleaned data</h2>', unsafe_allow_html=True)
 
+<<<<<<< HEAD
     col1, col2 = st.columns(2)
 
     with col1:
@@ -159,3 +182,34 @@ if uploaded_file:
             st.pyplot(fig)
         
 
+=======
+    # Histogram visualization
+    st.markdown('<h3 class="subheader">Histograms</h3>', unsafe_allow_html=True)
+    if len(numeric_cols) > 0:
+        selected_column_hist = st.selectbox("Select a column for histogram visualization", numeric_cols)
+        
+        if selected_column_hist:
+            fig, ax = plt.subplots()
+            sns.histplot(data_cleaned[selected_column_hist].astype(float), kde=True, ax=ax)
+            st.pyplot(fig)
+
+    # Box plot visualization
+    st.markdown('<h3 class="subheader">Box Plots</h3>', unsafe_allow_html=True)
+    if len(numeric_cols) > 0:
+        selected_column_box = st.selectbox("Select a column for box plot visualization", numeric_cols, key='box_plot')
+
+        if selected_column_box:
+            fig, ax = plt.subplots()
+            sns.boxplot(x=data_cleaned[selected_column_box].astype(float), ax=ax)
+            st.pyplot(fig)
+
+    # Bar plot visualization for non-numeric columns
+    st.markdown('<h3 class="subheader">Bar Plots for Categorical Data</h3>', unsafe_allow_html=True)
+    if len(non_numeric_cols) > 0:
+        selected_column_bar = st.selectbox("Select a column for bar plot visualization", non_numeric_cols)
+
+        if selected_column_bar:
+            fig, ax = plt.subplots()
+            sns.countplot(y=selected_column_bar, data=data_cleaned, ax=ax)
+            st.pyplot(fig)
+>>>>>>> 537b4d5dd805037c88139954eaef3c4daa11f941
