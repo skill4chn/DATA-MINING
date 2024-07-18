@@ -22,7 +22,6 @@ def plot_2d_correlation(data, x_column, y_column):
     ax.set_ylabel(y_column)
     st.pyplot(fig)
     
-    # Display correlation value
     st.markdown(f"### Correlation between {x_column} and {y_column}:")
     st.markdown(f"<h4 style='color: green;'>{correlation:.2f}</h4>", unsafe_allow_html=True)
 

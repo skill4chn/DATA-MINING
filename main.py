@@ -11,12 +11,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import linregress
 
-# Page configuration
 st.set_page_config(page_title="Data Mining Project", page_icon=":bar_chart:", layout="wide")
 
 st.sidebar.title(":male-technologist: Credits :writing_hand:")
 
-# Adding EFREI logo
 st.sidebar.image("efrei_logo.png", use_column_width=True)
 
 st.sidebar.markdown("""
@@ -93,9 +91,9 @@ if uploaded_file:
     col1, col2 = st.columns(2)
     with col1:
         st.markdown('<h2 class="subheader">Preview of the data</h2>', unsafe_allow_html=True)
-        st.markdown('<h4 class="subheader">10 first rows</h4>', unsafe_allow_html=True)
+        st.markdown('<h4 class="subheader">5 first rows</h4>', unsafe_allow_html=True)
         st.write(data.head())
-        st.markdown('<h4 class="subheader">10 last rows</h4>', unsafe_allow_html=True)
+        st.markdown('<h4 class="subheader">5 last rows</h4>', unsafe_allow_html=True)
         st.write(data.tail())
     
     with col2:
