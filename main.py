@@ -6,6 +6,10 @@ import seaborn as sns
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.cluster import KMeans, DBSCAN
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics import accuracy_score, mean_squared_error
 
 st.title("Data Mining Project")
 st.write("## Issam Falih")
@@ -47,17 +51,18 @@ st.markdown('<h1 class="title">Data Mining Project</h1>', unsafe_allow_html=True
 st.markdown('<p class="description">By Issam Falih</p>', unsafe_allow_html=True)
 
 st.markdown('<h2 class="header">Part I: Initial Data Exploration</h2>', unsafe_allow_html=True)
-uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
+uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx", "data"])
 
 if uploaded_file:
     file_type = uploaded_file.name.split('.')[-1]
     separator_option = st.selectbox("Select the separator used in your file", (",", ";", "\t", " "))
 
     if file_type == 'csv':
-        data = pd.read_csv(uploaded_file)
         data = pd.read_csv(uploaded_file, sep=separator_option)
-    else:
+    elif file_type == 'xlsx':
         data = pd.read_excel(uploaded_file)
+    elif file_type == 'data':
+        data = pd.read_csv(uploaded_file, header=None, delim_whitespace=True)
 
     st.write("Preview of the first and last lines of the data:")
     st.write(data.head(), data.tail())
@@ -92,7 +97,6 @@ if uploaded_file:
 
     # Part II: Data Pre-processing and Cleaning
     st.markdown('<h2 class="header">Part II: Data Pre-processing and Cleaning</h2>', unsafe_allow_html=True)
-
     # Managing missing values
     st.markdown('<h3 class="subheader">Managing Missing Values</h3>', unsafe_allow_html=True)
     missing_values_strategy = st.selectbox("Select a strategy for handling missing values:", 
@@ -151,7 +155,6 @@ if uploaded_file:
         st.markdown('<h3 class="subheader">Histograms</h3>', unsafe_allow_html=True)
         if len(numeric_cols) > 0:
             selected_column_hist = st.selectbox("Select a column for histogram visualization", numeric_cols)
-
         if selected_column_hist:
             fig, ax = plt.subplots(figsize=(4, 3))
             sns.histplot(data_cleaned[selected_column_hist], kde=True, ax=ax)
@@ -167,82 +170,104 @@ if uploaded_file:
             sns.boxplot(x=data_cleaned[selected_column_box], ax=ax)
             st.pyplot(fig)
 
-
     # Part IV: Clustering or Prediction
-st.markdown('<h2 class="header">Part IV: Clustering or Prediction</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="header">Part IV: Clustering or Prediction</h2>', unsafe_allow_html=True)
 
-# Choix de la tâche: Clustering ou Prédiction
-task = st.selectbox("Choose a task", ("Clustering", "Prediction"))
+    # Choix de la tâche: Clustering ou Prédiction
+    task = st.selectbox("Choose a task", ("Clustering", "Prediction"))
 
-if task == "Clustering":
-    st.markdown('<h3 class="subheader">Clustering</h3>', unsafe_allow_html=True)
+    if task == "Clustering":
+        st.markdown('<h3 class="subheader">Clustering</h3>', unsafe_allow_html=True)
 
-    # Choix de l'algorithme de clustering
-    clustering_algorithm = st.selectbox("Select a clustering algorithm", ("KMeans", "DBSCAN"))
+        # Choix de l'algorithme de clustering
+        clustering_algorithm = st.selectbox("Select a clustering algorithm", ("KMeans", "DBSCAN"))
 
-    if clustering_algorithm == "KMeans":
-        n_clusters = st.number_input("Number of clusters (K)", min_value=2, max_value=10, value=3)
-        kmeans = KMeans(n_clusters=n_clusters)
-        labels = kmeans.fit_predict(data_cleaned[numeric_cols])
-        data_cleaned['Cluster'] = labels
-        st.write(f"KMeans Clustering with {n_clusters} clusters")
-        st.write(data_cleaned.head())
+        if clustering_algorithm == "KMeans":
+            n_clusters = st.number_input("Number of clusters (K)", min_value=2, max_value=10, value=3)
+            kmeans = KMeans(n_clusters=n_clusters)
+            labels = kmeans.fit_predict(data_cleaned[numeric_cols])
+            data_cleaned['Cluster'] = labels
+            st.write(f"KMeans Clustering with {n_clusters} clusters")
+            st.write(data_cleaned.head())
 
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
-        st.pyplot(fig)
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
+            st.pyplot(fig)
 
-    elif clustering_algorithm == "DBSCAN":
-        eps = st.number_input("Epsilon (eps)", min_value=0.1, max_value=10.0, value=0.5)
-        min_samples = st.number_input("Minimum samples", min_value=1, max_value=10, value=5)
-        dbscan = DBSCAN(eps=eps, min_samples=min_samples)
-        labels = dbscan.fit_predict(data_cleaned[numeric_cols])
-        data_cleaned['Cluster'] = labels
-        st.write(f"DBSCAN Clustering with eps={eps} and min_samples={min_samples}")
-        st.write(data_cleaned.head())
+        elif clustering_algorithm == "DBSCAN":
+            eps = st.number_input("Epsilon (eps)", min_value=0.1, max_value=10.0, value=0.5)
+            min_samples = st.number_input("Minimum samples", min_value=1, max_value=10, value=5)
+            dbscan = DBSCAN(eps=eps, min_samples=min_samples)
+            labels = dbscan.fit_predict(data_cleaned[numeric_cols])
+            data_cleaned['Cluster'] = labels
+            st.write(f"DBSCAN Clustering with eps={eps} and min_samples={min_samples}")
+            st.write(data_cleaned.head())
 
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
-        st.pyplot(fig)
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
+            st.pyplot(fig)
 
-elif task == "Prediction":
-    st.markdown('<h3 class="subheader">Prediction</h3>', unsafe_allow_html=True)
+    elif task == "Prediction":
+        st.markdown('<h3 class="subheader">Prediction</h3>', unsafe_allow_html=True)
 
-    # Choix de l'algorithme de prédiction
-    prediction_algorithm = st.selectbox("Select a prediction algorithm", ("Linear Regression", "Logistic Regression"))
+        # Choix de l'algorithme de prédiction
+        prediction_problem = st.selectbox("Is it a regression or classification problem?", ("Regression", "Classification"))
 
-    target_column = st.selectbox("Select the target column", data_cleaned.columns)
+        if prediction_problem == "Regression":
+            prediction_algorithm = st.selectbox("Select a regression algorithm:", ("Linear Regression", "Random Forest Regressor"))
 
-    X = data_cleaned.drop(columns=[target_column])
-    y = data_cleaned[target_column]
+            target_column = st.selectbox("Select the target column for regression:", numeric_cols)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+            X = data_cleaned.drop(columns=[target_column])
+            y = data_cleaned[target_column]
 
-    if prediction_algorithm == "Linear Regression":
-        model = LinearRegression()
-        model.fit(X_train, y_train)
-        predictions = model.predict(X_test)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        st.write("Linear Regression Results")
-        st.write(f"Mean Squared Error: {mean_squared_error(y_test, predictions)}")
-        st.write(f"R^2 Score: {model.score(X_test, y_test)}")
+            if prediction_algorithm == "Linear Regression":
+                model = LinearRegression()
+            elif prediction_algorithm == "Random Forest Regressor":
+                n_estimators = st.slider("Number of trees:", min_value=10, max_value=100, value=50)
+                model = RandomForestRegressor(n_estimators=n_estimators)
 
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(x=y_test, y=predictions, ax=ax)
-        ax.set_xlabel("Actual Values")
-        ax.set_ylabel("Predicted Values")
-        st.pyplot(fig)
+            model.fit(X_train, y_train)
+            predictions = model.predict(X_test)
 
-    elif prediction_algorithm == "Logistic Regression":
-        model = LogisticRegression()
-        model.fit(X_train, y_train)
-        predictions = model.predict(X_test)
+            mse = mean_squared_error(y_test, predictions)
+            st.write(f"Mean Squared Error: {mse}")
 
-        st.write("Logistic Regression Results")
-        st.write(f"Accuracy: {accuracy_score(y_test, predictions)}")
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.scatterplot(x=y_test, y=predictions, ax=ax)
+            ax.set_xlabel("Actual Values")
+            ax.set_ylabel("Predicted Values")
+            st.pyplot(fig)
 
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(pd.crosstab(y_test, predictions), annot=True, fmt="d", cmap="YlGnBu", ax=ax)
-        ax.set_xlabel("Predicted Values")
-        ax.set_ylabel("Actual Values")
-        st.pyplot(fig)
+        elif prediction_problem == "Classification":
+            prediction_algorithm = st.selectbox("Select a classification algorithm:", ("Logistic Regression", "Random Forest Classifier"))
+
+            target_column = st.selectbox("Select the target column for classification:", non_numeric_cols)
+
+            X = data_cleaned.drop(columns=[target_column])
+            y = data_cleaned[target_column]
+
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+            if prediction_algorithm == "Logistic Regression":
+                model = LogisticRegression()
+            elif prediction_algorithm == "Random Forest Classifier":
+                n_estimators = st.slider("Number of trees:", min_value=10, max_value=100, value=50)
+                model = RandomForestClassifier(n_estimators=n_estimators)
+
+            model.fit(X_train, y_train)
+            predictions = model.predict(X_test)
+
+            accuracy = accuracy_score(y_test, predictions)
+            st.write(f"Accuracy: {accuracy}")
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(pd.crosstab(y_test, predictions), annot=True, fmt="d", cmap="YlGnBu", ax=ax)
+            ax.set_xlabel("Predicted Values")
+            ax.set_ylabel("Actual Values")
+            st.pyplot(fig)
+
+# Footer
+st.markdown('<div class="footer">© 2024 Issam Falih. All rights reserved.</div>', unsafe_allow_html=True)
