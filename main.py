@@ -231,4 +231,4 @@ if uploaded_file:
             st.pyplot(fig)
 
             
-st.markdown('<div class="footer">© 2024 Issam Falih. All rights reserved.</div>', unsafe_allow_html=True)
+st.markdown('<div class="footer">© 2024 Data Mining Issam Falih. All rights reserved.</div>', unsafe_allow_html=True)
