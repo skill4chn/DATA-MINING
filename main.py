@@ -10,6 +10,7 @@ from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.cluster import KMeans, DBSCAN
 from scipy.stats import linregress
+from mpl_toolkits.mplot3d import Axes3D
 
 # Page configuration
 st.set_page_config(page_title="Data Mining Project", page_icon=":bar_chart:", layout="wide")
@@ -159,8 +160,6 @@ if uploaded_file:
             sns.boxplot(x=data_cleaned[selected_column_box], ax=ax)
             st.pyplot(fig)
             
-            
-    # Part IV: Clustering or Prediction
     st.markdown('<h2 class="header">Part IV: Clustering or Prediction</h2>', unsafe_allow_html=True)
     task = st.selectbox("Choose a task", ("Clustering", "Prediction"))
 
@@ -169,7 +168,7 @@ if uploaded_file:
         clustering_algorithm = st.selectbox("Select a clustering algorithm", ("KMeans", "DBSCAN"))
         
         if clustering_algorithm == "KMeans":
-            n_clusters = st.number_input("Number of clusters (K)", min_value=2, max_value=10, value=3)
+            n_clusters = st.number_input("Number of clusters (K)", min_value=2, max_value=10, value=3)            
             x_column = st.selectbox("Select the X-axis column for the plot", numeric_cols, key='kmeans_x')
             y_column = st.selectbox("Select the Y-axis column for the plot", numeric_cols, key='kmeans_y')
             
@@ -190,6 +189,7 @@ if uploaded_file:
             min_samples = st.number_input("Minimum samples", min_value=1, max_value=10, value=5)
             x_column = st.selectbox("Select the X-axis column for the plot", numeric_cols, key='dbscan_x')
             y_column = st.selectbox("Select the Y-axis column for the plot", numeric_cols, key='dbscan_y')
+            z_column = st.selectbox("Select the Z-axis column for the plot", numeric_cols, key='dbscan_z')
             
             dbscan = DBSCAN(eps=eps, min_samples=min_samples)
             labels = dbscan.fit_predict(data_cleaned[numeric_cols])
@@ -203,6 +203,42 @@ if uploaded_file:
             ax.set_ylabel(y_column, fontsize=12) 
             st.pyplot(fig)
 
+        # Part V: Learning Evaluation
+        st.markdown('<h2 class="header">Part V: Learning Evaluation</h2>', unsafe_allow_html=True)
+        
+        if clustering_algorithm == "KMeans":
+            st.markdown('<h3 class="subheader">Cluster Statistics for KMeans</h3>', unsafe_allow_html=True)
+            cluster_centers = kmeans.cluster_centers_
+            st.write("Cluster Centers:")
+            st.write(cluster_centers)
+            
+            cluster_counts = data_cleaned['Cluster'].value_counts().sort_index()
+            st.write("Number of data points in each cluster:")
+            st.write(cluster_counts)
+        
+        elif clustering_algorithm == "DBSCAN":
+            st.markdown('<h3 class="subheader">Cluster Statistics for DBSCAN</h3>', unsafe_allow_html=True)
+            cluster_counts = data_cleaned['Cluster'].value_counts().sort_index()
+            st.write("Number of data points in each cluster:")
+            st.write(cluster_counts)
+            
+        # 3D Scatter Plot (if there are at least 3 numeric columns)
+        if len(numeric_cols) >= 3:
+            st.markdown('<h3 class="subheader">3D Scatter Plot of Clusters</h3>', unsafe_allow_html=True)
+            x_col_3d = st.selectbox("Select the X-axis column for the 3D plot", numeric_cols, key='3d_x')
+            y_col_3d = st.selectbox("Select the Y-axis column for the 3D plot", numeric_cols, key='3d_y')
+            z_col_3d = st.selectbox("Select the Z-axis column for the 3D plot", numeric_cols, key='3d_z')
+
+            fig = plt.figure(figsize=(10, 6))
+            ax = fig.add_subplot(111, projection='3d')
+            scatter = ax.scatter(data_cleaned[x_col_3d], data_cleaned[y_col_3d], data_cleaned[z_col_3d], c=data_cleaned['Cluster'], cmap='viridis')
+            ax.set_xlabel(x_col_3d)
+            ax.set_ylabel(y_col_3d)
+            ax.set_zlabel(z_col_3d)
+            legend1 = ax.legend(*scatter.legend_elements(), title="Clusters")
+            ax.add_artist(legend1)
+            st.pyplot(fig)
+        
     elif task == "Prediction":
         st.markdown('<h3 class="subheader">Prediction</h3>', unsafe_allow_html=True)
         prediction_algorithm = st.selectbox("Select a prediction algorithm", ("Linear Regression", "Logistic Regression"))
@@ -283,7 +319,5 @@ if uploaded_file:
                 ax.set_xlabel("Predicted Values")
                 ax.set_ylabel("Actual Values")
                 st.pyplot(fig)
-            
-            
             
 st.markdown('<div class="footer">© 2024 Data Mining Issam Falih. All rights reserved.</div>', unsafe_allow_html=True)
