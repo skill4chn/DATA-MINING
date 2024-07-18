@@ -40,8 +40,9 @@ def plot_3d_correlation(data, x_column, y_column, z_column):
     plt.title('3D Scatter Plot with Clusters')
     st.pyplot(fig)
     
-    # Display correlation matrix as a heatmap
-    st.markdown("### Correlation Matrix:")
-    fig, ax = plt.subplots(figsize=(6, 4))
-    sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", ax=ax)
+def plot_correlation_heatmap(data):
+    corr = data.corr()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm", ax=ax)
+    plt.title('Correlation Heatmap')
     st.pyplot(fig)
