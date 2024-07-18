@@ -1,3 +1,6 @@
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, mean_squared_error
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -10,7 +13,6 @@ from sklearn.cluster import KMeans, DBSCAN
 # Page configuration
 st.set_page_config(page_title="Data Mining Project", page_icon=":bar_chart:", layout="wide")
 
-# Custom CSS for styling
 st.markdown("""
     <style>
     .title {
@@ -60,8 +62,7 @@ if uploaded_file:
             data[col] = data[col].str.replace(',', '.').astype(float)
         except:
             pass
-        
-    # Using columns for better layout
+
     col1, col2 = st.columns(2)
 
     with col1:
@@ -83,7 +84,6 @@ if uploaded_file:
     # Part II: Data Pre-processing and Cleaning
     st.markdown('<h2 class="header">Part II: Data Pre-processing and Cleaning</h2>', unsafe_allow_html=True)
     
-    # Managing missing values
     st.markdown('<h3 class="subheader">Managing Missing Values</h3>', unsafe_allow_html=True)
     missing_values_strategy = st.selectbox("Select a strategy for handling missing values:", 
                                            ("Delete rows", "Delete columns", "Impute with mean", "Impute with median", "Impute with mode", "KNN Imputation"))
@@ -117,7 +117,6 @@ if uploaded_file:
     st.write(f"Dataset after handling missing values using '{missing_values_strategy}':")
     st.write(data_cleaned.head())
 
-    # Data normalization
     st.markdown('<h3 class="subheader">Data Normalization</h3>', unsafe_allow_html=True)
     normalization_strategy = st.selectbox("Select a normalization method:", 
                                           ("None", "Min-Max Normalization", "Z-score Standardization"))
@@ -159,83 +158,78 @@ if uploaded_file:
             
             
     # Part IV: Clustering or Prediction
-st.markdown('<h2 class="header">Part IV: Clustering or Prediction</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="header">Part IV: Clustering or Prediction</h2>', unsafe_allow_html=True)
+    task = st.selectbox("Choose a task", ("Clustering", "Prediction"))
 
-# Choix de la tâche: Clustering ou Prédiction
-task = st.selectbox("Choose a task", ("Clustering", "Prediction"))
+    if task == "Clustering":
+        st.markdown('<h3 class="subheader">Clustering</h3>', unsafe_allow_html=True)
+        clustering_algorithm = st.selectbox("Select a clustering algorithm", ("KMeans", "DBSCAN"))
+        
+        if clustering_algorithm == "KMeans":
+            n_clusters = st.number_input("Number of clusters (K)", min_value=2, max_value=10, value=3)
+            kmeans = KMeans(n_clusters=n_clusters)
+            labels = kmeans.fit_predict(data_cleaned[numeric_cols])
+            data_cleaned['Cluster'] = labels
+            st.write(f"KMeans Clustering with {n_clusters} clusters")
+            st.write(data_cleaned.head())
+            
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
+            st.pyplot(fig)
+        
+        elif clustering_algorithm == "DBSCAN":
+            eps = st.number_input("Epsilon (eps)", min_value=0.1, max_value=10.0, value=0.5)
+            min_samples = st.number_input("Minimum samples", min_value=1, max_value=10, value=5)
+            dbscan = DBSCAN(eps=eps, min_samples=min_samples)
+            labels = dbscan.fit_predict(data_cleaned[numeric_cols])
+            data_cleaned['Cluster'] = labels
+            st.write(f"DBSCAN Clustering with eps={eps} and min_samples={min_samples}")
+            st.write(data_cleaned.head())
+            
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
+            st.pyplot(fig)
 
-if task == "Clustering":
-    st.markdown('<h3 class="subheader">Clustering</h3>', unsafe_allow_html=True)
-    
-    # Choix de l'algorithme de clustering
-    clustering_algorithm = st.selectbox("Select a clustering algorithm", ("KMeans", "DBSCAN"))
-    
-    if clustering_algorithm == "KMeans":
-        n_clusters = st.number_input("Number of clusters (K)", min_value=2, max_value=10, value=3)
-        kmeans = KMeans(n_clusters=n_clusters)
-        labels = kmeans.fit_predict(data_cleaned[numeric_cols])
-        data_cleaned['Cluster'] = labels
-        st.write(f"KMeans Clustering with {n_clusters} clusters")
-        st.write(data_cleaned.head())
+    elif task == "Prediction":
+        st.markdown('<h3 class="subheader">Prediction</h3>', unsafe_allow_html=True)
+        prediction_algorithm = st.selectbox("Select a prediction algorithm", ("Linear Regression", "Logistic Regression"))
         
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
-        st.pyplot(fig)
-    
-    elif clustering_algorithm == "DBSCAN":
-        eps = st.number_input("Epsilon (eps)", min_value=0.1, max_value=10.0, value=0.5)
-        min_samples = st.number_input("Minimum samples", min_value=1, max_value=10, value=5)
-        dbscan = DBSCAN(eps=eps, min_samples=min_samples)
-        labels = dbscan.fit_predict(data_cleaned[numeric_cols])
-        data_cleaned['Cluster'] = labels
-        st.write(f"DBSCAN Clustering with eps={eps} and min_samples={min_samples}")
-        st.write(data_cleaned.head())
+        target_column = st.selectbox("Select the target column", data_cleaned.columns)
         
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
-        st.pyplot(fig)
+        X = data_cleaned.drop(columns=[target_column])
+        y = data_cleaned[target_column]
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+        
+        if prediction_algorithm == "Linear Regression":
+            model = LinearRegression()
+            model.fit(X_train, y_train)
+            predictions = model.predict(X_test)
+            
+            st.write("Linear Regression Results")
+            st.write(f"Mean Squared Error: {mean_squared_error(y_test, predictions)}")
+            st.write(f"R^2 Score: {model.score(X_test, y_test)}")
+            
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.scatterplot(x=y_test, y=predictions, ax=ax)
+            ax.set_xlabel("Actual Values")
+            ax.set_ylabel("Predicted Values")
+            st.pyplot(fig)
+        
+        elif prediction_algorithm == "Logistic Regression":
+            model = LogisticRegression()
+            model.fit(X_train, y_train)
+            predictions = model.predict(X_test)
+            
+            st.write("Logistic Regression Results")
+            st.write(f"Accuracy: {accuracy_score(y_test, predictions)}")
+            
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(pd.crosstab(y_test, predictions), annot=True, fmt="d", cmap="YlGnBu", ax=ax)
+            ax.set_xlabel("Predicted Values")
+            ax.set_ylabel("Actual Values")
+            st.pyplot(fig)
 
-elif task == "Prediction":
-    st.markdown('<h3 class="subheader">Prediction</h3>', unsafe_allow_html=True)
-    
-    # Choix de l'algorithme de prédiction
-    prediction_algorithm = st.selectbox("Select a prediction algorithm", ("Linear Regression", "Logistic Regression"))
-    
-    target_column = st.selectbox("Select the target column", data_cleaned.columns)
-    
-    X = data_cleaned.drop(columns=[target_column])
-    y = data_cleaned[target_column]
-    
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-    
-    if prediction_algorithm == "Linear Regression":
-        model = LinearRegression()
-        model.fit(X_train, y_train)
-        predictions = model.predict(X_test)
-        
-        st.write("Linear Regression Results")
-        st.write(f"Mean Squared Error: {mean_squared_error(y_test, predictions)}")
-        st.write(f"R^2 Score: {model.score(X_test, y_test)}")
-        
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(x=y_test, y=predictions, ax=ax)
-        ax.set_xlabel("Actual Values")
-        ax.set_ylabel("Predicted Values")
-        st.pyplot(fig)
-    
-    elif prediction_algorithm == "Logistic Regression":
-        model = LogisticRegression()
-        model.fit(X_train, y_train)
-        predictions = model.predict(X_test)
-        
-        st.write("Logistic Regression Results")
-        st.write(f"Accuracy: {accuracy_score(y_test, predictions)}")
-        
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(pd.crosstab(y_test, predictions), annot=True, fmt="d", cmap="YlGnBu", ax=ax)
-        ax.set_xlabel("Predicted Values")
-        ax.set_ylabel("Actual Values")
-        st.pyplot(fig)
-
-        
+            
+st.markdown('<div class="footer">© 2024 Issam Falih. All rights reserved.</div>', unsafe_allow_html=True)
 
