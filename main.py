@@ -1,18 +1,16 @@
+# src/main.py
+import streamlit as st
+import pandas as pd
+from data_processing import handle_missing_values, normalize_data, load_data
+from visualization import plot_histogram, plot_boxplot
+from clustering import perform_clustering, evaluate_clustering, plot_3d_clusters
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, mean_squared_error, roc_curve, roc_auc_score
-import streamlit as st
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.impute import SimpleImputer, KNNImputer
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from sklearn.cluster import KMeans, DBSCAN
 from scipy.stats import linregress
-from mpl_toolkits.mplot3d import Axes3D
 
-# Page configuration
 st.set_page_config(page_title="Data Mining Project", page_icon=":bar_chart:", layout="wide")
 st.sidebar.title("Project Data Mining")
 st.sidebar.write("Nathanaël RAKOTO")
@@ -45,7 +43,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Main title
 st.markdown('<h1 class="title">Data Mining Project</h1>', unsafe_allow_html=True)
 st.markdown('<p class="description">By Issam Falih</p>', unsafe_allow_html=True)
 
@@ -53,112 +50,57 @@ st.markdown('<h2 class="header">Part I: Initial Data Exploration</h2>', unsafe_a
 uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
 
 if uploaded_file:
-    file_type = uploaded_file.name.split('.')[-1]
-    separator_option = st.selectbox("Select the separator used in your file", (",", ";", "\t", " "))
+    data, numeric_cols, non_numeric_cols = load_data(uploaded_file)
     
-    if file_type == 'csv':
-        data = pd.read_csv(uploaded_file, sep=separator_option)
-    else:
-        data = pd.read_excel(uploaded_file)
-
-    for col in data.columns:
-        try:
-            data[col] = data[col].str.replace(',', '.').astype(float)
-        except:
-            pass
-
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown('<h2 class="subheader">Preview of the data</h2>', unsafe_allow_html=True)
         st.markdown('<h4 class="subheader">10 first rows</h4>', unsafe_allow_html=True)
         st.write(data.head())
         st.markdown('<h4 class="subheader">10 last rows</h4>', unsafe_allow_html=True)
         st.write(data.tail())
-
+    
     with col2:
         st.markdown('<h2 class="subheader">Summary of the data</h2>', unsafe_allow_html=True)
         st.write(data.describe(include='all'))
-
+    
     st.markdown('<h3 class="subheader">Dataset Information</h3>', unsafe_allow_html=True)
     st.write(f"Number of rows: {data.shape[0]}, Number of columns: {data.shape[1]}")
     st.write("Number of missing values per column:")
     st.write(data.isnull().sum())
 
-    # Part II: Data Pre-processing and Cleaning
     st.markdown('<h2 class="header">Part II: Data Pre-processing and Cleaning</h2>', unsafe_allow_html=True)
     
     st.markdown('<h3 class="subheader">Managing Missing Values</h3>', unsafe_allow_html=True)
     missing_values_strategy = st.selectbox("Select a strategy for handling missing values:", 
                                            ("Delete rows", "Delete columns", "Impute with mean", "Impute with median", "Impute with mode", "KNN Imputation"))
-
-    numeric_cols = data.select_dtypes(include=['int64', 'float64']).columns
-    non_numeric_cols = data.select_dtypes(exclude=['int64', 'float64']).columns
-
-    if missing_values_strategy == "Delete rows":
-        data_cleaned = data.dropna()
-    elif missing_values_strategy == "Delete columns":
-        data_cleaned = data.dropna(axis=1)
-    elif missing_values_strategy == "Impute with mean":
-        imputer = SimpleImputer(strategy='mean')
-        data[numeric_cols] = imputer.fit_transform(data[numeric_cols])
-        data_cleaned = data
-    elif missing_values_strategy == "Impute with median":
-        imputer = SimpleImputer(strategy='median')
-        data[numeric_cols] = imputer.fit_transform(data[numeric_cols])
-        data_cleaned = data
-    elif missing_values_strategy == "Impute with mode":
-        imputer_num = SimpleImputer(strategy='most_frequent')
-        imputer_cat = SimpleImputer(strategy='most_frequent')
-        data[numeric_cols] = imputer_num.fit_transform(data[numeric_cols])
-        data[non_numeric_cols] = imputer_cat.fit_transform(data[non_numeric_cols])
-        data_cleaned = data
-    elif missing_values_strategy == "KNN Imputation":
-        imputer = KNNImputer(n_neighbors=5)
-        data[numeric_cols] = imputer.fit_transform(data[numeric_cols])
-        data_cleaned = data
-
+    data_cleaned = handle_missing_values(data, numeric_cols, non_numeric_cols, missing_values_strategy)
     st.write(f"Dataset after handling missing values using '{missing_values_strategy}':")
     st.write(data_cleaned.head())
 
     st.markdown('<h3 class="subheader">Data Normalization</h3>', unsafe_allow_html=True)
     normalization_strategy = st.selectbox("Select a normalization method:", 
                                           ("None", "Min-Max Normalization", "Z-score Standardization"))
-
-    if normalization_strategy == "Min-Max Normalization":
-        scaler = MinMaxScaler()
-        data_cleaned[numeric_cols] = scaler.fit_transform(data_cleaned[numeric_cols])
-    elif normalization_strategy == "Z-score Standardization":
-        scaler = StandardScaler()
-        data_cleaned[numeric_cols] = scaler.fit_transform(data_cleaned[numeric_cols])
-
+    data_cleaned = normalize_data(data_cleaned, numeric_cols, normalization_strategy)
     st.write(f"Dataset after applying '{normalization_strategy}':")
     st.write(data_cleaned.head())
 
-    # Part III: Visualization of the cleaned data
     st.markdown('<h2 class="header">Part III: Visualization of the cleaned data</h2>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown('<h3 class="subheader">Histograms</h3>', unsafe_allow_html=True)
         if len(numeric_cols) > 0:
             selected_column_hist = st.selectbox("Select a column for histogram visualization", numeric_cols)
-        
-        if selected_column_hist:
-            fig, ax = plt.subplots(figsize=(4, 3))
-            sns.histplot(data_cleaned[selected_column_hist], kde=True, ax=ax)
-            st.pyplot(fig)
+            if selected_column_hist:
+                plot_histogram(data_cleaned, selected_column_hist)
 
     with col2:
         st.markdown('<h3 class="subheader">Box Plots</h3>', unsafe_allow_html=True)
         if len(numeric_cols) > 0:
             selected_column_box = st.selectbox("Select a column for box plot visualization", numeric_cols, key='box_plot')
-
-        if selected_column_box:
-            fig, ax = plt.subplots(figsize=(6, 4))
-            sns.boxplot(x=data_cleaned[selected_column_box], ax=ax)
-            st.pyplot(fig)
+            if selected_column_box:
+                plot_boxplot(data_cleaned, selected_column_box)
             
     st.markdown('<h2 class="header">Part IV: Clustering or Prediction</h2>', unsafe_allow_html=True)
     task = st.selectbox("Choose a task", ("Clustering", "Prediction"))
@@ -166,98 +108,26 @@ if uploaded_file:
     if task == "Clustering":
         st.markdown('<h3 class="subheader">Clustering</h3>', unsafe_allow_html=True)
         clustering_algorithm = st.selectbox("Select a clustering algorithm", ("KMeans", "DBSCAN"))
-        
-        if clustering_algorithm == "KMeans":
-            n_clusters = st.number_input("Number of clusters (K)", min_value=2, max_value=10, value=3)            
-            x_column = st.selectbox("Select the X-axis column for the plot", numeric_cols, key='kmeans_x')
-            y_column = st.selectbox("Select the Y-axis column for the plot", numeric_cols, key='kmeans_y')
-            
-            kmeans = KMeans(n_clusters=n_clusters)
-            labels = kmeans.fit_predict(data_cleaned[numeric_cols])
-            data_cleaned['Cluster'] = labels
-            st.write(f"KMeans Clustering with {n_clusters} clusters")
-            st.write(data_cleaned.head())
-            
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.scatterplot(x=data_cleaned[x_column], y=data_cleaned[y_column], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
-            ax.set_xlabel(x_column, fontsize=12)  
-            ax.set_ylabel(y_column, fontsize=12)  
-            st.pyplot(fig)
-        
-        elif clustering_algorithm == "DBSCAN":
-            eps = st.number_input("Epsilon (eps)", min_value=0.1, max_value=10.0, value=0.5)
-            min_samples = st.number_input("Minimum samples", min_value=1, max_value=10, value=5)
-            x_column = st.selectbox("Select the X-axis column for the plot", numeric_cols, key='dbscan_x')
-            y_column = st.selectbox("Select the Y-axis column for the plot", numeric_cols, key='dbscan_y')
-            z_column = st.selectbox("Select the Z-axis column for the plot", numeric_cols, key='dbscan_z')
-            
-            dbscan = DBSCAN(eps=eps, min_samples=min_samples)
-            labels = dbscan.fit_predict(data_cleaned[numeric_cols])
-            data_cleaned['Cluster'] = labels
-            st.write(f"DBSCAN Clustering with eps={eps} and min_samples={min_samples}")
-            st.write(data_cleaned.head())
-            
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.scatterplot(x=data_cleaned[x_column], y=data_cleaned[y_column], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
-            ax.set_xlabel(x_column, fontsize=12) 
-            ax.set_ylabel(y_column, fontsize=12) 
-            st.pyplot(fig)
+        model = perform_clustering(data_cleaned, numeric_cols, clustering_algorithm)
 
-        # Part V: Learning Evaluation
         st.markdown('<h2 class="header">Part V: Learning Evaluation</h2>', unsafe_allow_html=True)
-        
-        if clustering_algorithm == "KMeans":
-            st.markdown('<h3 class="subheader">Cluster Statistics for KMeans</h3>', unsafe_allow_html=True)
-            cluster_centers = kmeans.cluster_centers_
-            st.write("Cluster Centers:")
-            st.write(cluster_centers)
-            
-            cluster_counts = data_cleaned['Cluster'].value_counts().sort_index()
-            st.write("Number of data points in each cluster:")
-            st.write(cluster_counts)
-        
-        elif clustering_algorithm == "DBSCAN":
-            st.markdown('<h3 class="subheader">Cluster Statistics for DBSCAN</h3>', unsafe_allow_html=True)
-            cluster_counts = data_cleaned['Cluster'].value_counts().sort_index()
-            st.write("Number of data points in each cluster:")
-            st.write(cluster_counts)
-            
-        # 3D Scatter Plot (if there are at least 3 numeric columns)
+        evaluate_clustering(data_cleaned, clustering_algorithm, model)
         if len(numeric_cols) >= 3:
-            st.markdown('<h3 class="subheader">3D Scatter Plot of Clusters</h3>', unsafe_allow_html=True)
-            x_col_3d = st.selectbox("Select the X-axis column for the 3D plot", numeric_cols, key='3d_x')
-            y_col_3d = st.selectbox("Select the Y-axis column for the 3D plot", numeric_cols, key='3d_y')
-            z_col_3d = st.selectbox("Select the Z-axis column for the 3D plot", numeric_cols, key='3d_z')
+            plot_3d_clusters(data_cleaned, numeric_cols)
 
-            fig = plt.figure(figsize=(10, 6))
-            ax = fig.add_subplot(111, projection='3d')
-            scatter = ax.scatter(data_cleaned[x_col_3d], data_cleaned[y_col_3d], data_cleaned[z_col_3d], c=data_cleaned['Cluster'], cmap='viridis')
-            ax.set_xlabel(x_col_3d)
-            ax.set_ylabel(y_col_3d)
-            ax.set_zlabel(z_col_3d)
-            legend1 = ax.legend(*scatter.legend_elements(), title="Clusters")
-            ax.add_artist(legend1)
-            st.pyplot(fig)
-        
     elif task == "Prediction":
         st.markdown('<h3 class="subheader">Prediction</h3>', unsafe_allow_html=True)
         prediction_algorithm = st.selectbox("Select a prediction algorithm", ("Linear Regression", "Logistic Regression"))
+        target_column = st.selectbox("Select the target column", data_cleaned.columns)
         
+        X = data_cleaned.drop(columns=[target_column])
+        y = data_cleaned[target_column]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
         
         if prediction_algorithm == "Linear Regression":
-            target_column = st.selectbox("Select the target column", data_cleaned.columns)
-            X = data_cleaned.drop(columns=[target_column])
-            y = data_cleaned[target_column]
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-            
             model = LinearRegression()
             model.fit(X_train, y_train)
             predictions = model.predict(X_test)
-            
-            correct_predictions = np.sum(predictions == y_test)
-            incorrect_predictions = len(y_test) - correct_predictions
-            st.write("Number of correct predictions:", correct_predictions)
-            st.write("Number of incorrect predictions:", incorrect_predictions)
             
             st.write("Linear Regression Results")
             st.write(f"Mean Squared Error: {mean_squared_error(y_test, predictions)}")
@@ -274,14 +144,14 @@ if uploaded_file:
             plt.title('Actual vs Predicted Values')
             plt.legend()
             st.pyplot(fig)
-    
+        
         elif prediction_algorithm == "Logistic Regression":
             target_cols = [col for col in data_cleaned.columns if set(data_cleaned[col].dropna().unique()) <= {0, 1}]
             if len(target_cols) == 0:
                 st.error("No appropriate target column found for the selected algorithm.")
             else:
-                target_column = st.selectbox("Select the target column", target_cols)   
-                
+                target_column = st.selectbox("Select the target column", target_cols)
+            
             X = data_cleaned.drop(columns=[target_column])
             y = data_cleaned[target_column]
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -289,35 +159,29 @@ if uploaded_file:
             model.fit(X_train, y_train)
             predictions = model.predict(X_test)
             predictions_proba = model.predict_proba(X_test)[:, 1]
-            correct_predictions = np.sum(predictions == y_test)
-            incorrect_predictions = len(y_test) - correct_predictions
-            st.write("Number of correct predictions:", correct_predictions)
-            st.write("Number of incorrect predictions:", incorrect_predictions)
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write("Logistic Regression Results")
-                st.write(f"Accuracy: {accuracy_score(y_test, predictions)}")
+            st.write("Logistic Regression Results")
+            st.write(f"Accuracy: {accuracy_score(y_test, predictions)}")
 
-                fpr, tpr, thresholds = roc_curve(y_test, predictions_proba)
-                roc_auc = roc_auc_score(y_test, predictions_proba)
-                
-                fig, ax = plt.subplots(figsize=(10, 6))
-                ax.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
-                ax.plot([0, 1], [0, 1], color='gray', lw=2, linestyle='--')
-                ax.set_xlim([0.0, 1.0])
-                ax.set_ylim([0.0, 1.05])
-                ax.set_xlabel('False Positive Rate')
-                ax.set_ylabel('True Positive Rate')
-                ax.set_title('Receiver Operating Characteristic')
-                ax.legend(loc="lower right")
-                st.pyplot(fig)
-
-            with col2:
-                fig, ax = plt.subplots(figsize=(10, 6))
-                sns.heatmap(pd.crosstab(y_test, predictions), annot=True, fmt="d", cmap="YlGnBu", ax=ax)
-                ax.set_xlabel("Predicted Values")
-                ax.set_ylabel("Actual Values")
-                st.pyplot(fig)
+            fpr, tpr, thresholds = roc_curve(y_test, predictions_proba)
+            roc_auc = roc_auc_score(y_test, predictions_proba)
             
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+            ax.plot([0, 1], [0, 1], color='gray', lw=2, linestyle='--')
+            ax.set_xlim([0.0, 1.0])
+            ax.set_ylim([0.0, 1.05])
+            ax.set_xlabel('False Positive Rate')
+            ax.set_ylabel('True Positive Rate')
+            ax.set_title('Receiver Operating Characteristic')
+            ax.legend(loc="lower right")
+            st.pyplot(fig)
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(pd.crosstab(y_test, predictions), annot=True, fmt="d", cmap="YlGnBu", ax=ax)
+            ax.set_xlabel("Predicted Values")
+            ax.set_ylabel("Actual Values")
+            st.pyplot(fig)
+
 st.markdown('<div class="footer">© 2024 Data Mining Issam Falih. All rights reserved.</div>', unsafe_allow_html=True)
+
