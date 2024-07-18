@@ -1,8 +1,8 @@
-# src/main.py
 import streamlit as st
 import pandas as pd
+import numpy as np
 from data_processing import handle_missing_values, normalize_data, load_data
-from visualization import plot_histogram, plot_boxplot
+from visualization import plot_histogram, plot_boxplot, plot_2d_correlation, plot_3d_correlation
 from clustering import perform_clustering, evaluate_clustering, plot_3d_clusters
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import train_test_split
@@ -102,6 +102,12 @@ if uploaded_file:
             if selected_column_box:
                 plot_boxplot(data_cleaned, selected_column_box)
             
+    st.markdown('<h3 class="subheader">2D Correlation Visualization</h3>', unsafe_allow_html=True)
+    if len(numeric_cols) > 1:
+        x_col_2d = st.selectbox("Select the X-axis column for the 2D plot", numeric_cols, key='2d_x')
+        y_col_2d = st.selectbox("Select the Y-axis column for the 2D plot", numeric_cols, key='2d_y')
+        plot_2d_correlation(data_cleaned, x_col_2d, y_col_2d)
+            
     st.markdown('<h2 class="header">Part IV: Clustering or Prediction</h2>', unsafe_allow_html=True)
     task = st.selectbox("Choose a task", ("Clustering", "Prediction"))
 
@@ -113,7 +119,10 @@ if uploaded_file:
         st.markdown('<h2 class="header">Part V: Learning Evaluation</h2>', unsafe_allow_html=True)
         evaluate_clustering(data_cleaned, clustering_algorithm, model)
         if len(numeric_cols) >= 3:
-            plot_3d_clusters(data_cleaned, numeric_cols)
+            x_col_3d = st.selectbox("Select the X-axis column for the 3D plot", numeric_cols, key='3d_x')
+            y_col_3d = st.selectbox("Select the Y-axis column for the 3D plot", numeric_cols, key='3d_y')
+            z_col_3d = st.selectbox("Select the Z-axis column for the 3D plot", numeric_cols, key='3d_z')
+            plot_3d_correlation(data_cleaned, x_col_3d, y_col_3d, z_col_3d)
 
     elif task == "Prediction":
         st.markdown('<h3 class="subheader">Prediction</h3>', unsafe_allow_html=True)
@@ -184,4 +193,3 @@ if uploaded_file:
             st.pyplot(fig)
 
 st.markdown('<div class="footer">© 2024 Data Mining Issam Falih. All rights reserved.</div>', unsafe_allow_html=True)
-

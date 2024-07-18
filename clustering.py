@@ -76,3 +76,6 @@ def plot_3d_clusters(data, numeric_cols):
     legend1 = ax.legend(*scatter.legend_elements(), title="Clusters")
     ax.add_artist(legend1)
     st.pyplot(fig)
+
+    correlation_matrix = data[[x_col_3d, y_col_3d, z_col_3d]].corr()
+    st.write(f"Correlation matrix:\n{correlation_matrix}")
