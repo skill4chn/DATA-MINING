@@ -13,20 +13,17 @@ st.set_page_config(page_title="Data Mining Project", page_icon=":bar_chart:", la
 # Custom CSS for styling
 st.markdown("""
     <style>
-    .main {
-        background-color: #f5f5f5;
-    }
     .title {
-        color: #4CAF50;
+        color: white;
         font-size: 36px;
         font-weight: bold;
     }
     .header {
-        color: #2E7D32;
+        color: white;
         font-size: 28px;
     }
     .subheader {
-        color: #388E3C;
+        color: white;
         font-size: 24px;
     }
     .description {
@@ -68,12 +65,14 @@ if uploaded_file:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown('<h3 class="subheader">Preview of the data</h3>', unsafe_allow_html=True)
+        st.markdown('<h2 class="subheader">Preview of the data</h2>', unsafe_allow_html=True)
+        st.markdown('<h4 class="subheader">10 first rows</h4>', unsafe_allow_html=True)
         st.write(data.head())
+        st.markdown('<h4 class="subheader">10 last rows</h4>', unsafe_allow_html=True)
         st.write(data.tail())
 
     with col2:
-        st.markdown('<h3 class="subheader">Summary of the data</h3>', unsafe_allow_html=True)
+        st.markdown('<h2 class="subheader">Summary of the data</h2>', unsafe_allow_html=True)
         st.write(data.describe(include='all'))
 
     st.markdown('<h3 class="subheader">Dataset Information</h3>', unsafe_allow_html=True)
@@ -157,5 +156,86 @@ if uploaded_file:
             fig, ax = plt.subplots(figsize=(6, 4))
             sns.boxplot(x=data_cleaned[selected_column_box], ax=ax)
             st.pyplot(fig)
+            
+            
+    # Part IV: Clustering or Prediction
+st.markdown('<h2 class="header">Part IV: Clustering or Prediction</h2>', unsafe_allow_html=True)
+
+# Choix de la tâche: Clustering ou Prédiction
+task = st.selectbox("Choose a task", ("Clustering", "Prediction"))
+
+if task == "Clustering":
+    st.markdown('<h3 class="subheader">Clustering</h3>', unsafe_allow_html=True)
+    
+    # Choix de l'algorithme de clustering
+    clustering_algorithm = st.selectbox("Select a clustering algorithm", ("KMeans", "DBSCAN"))
+    
+    if clustering_algorithm == "KMeans":
+        n_clusters = st.number_input("Number of clusters (K)", min_value=2, max_value=10, value=3)
+        kmeans = KMeans(n_clusters=n_clusters)
+        labels = kmeans.fit_predict(data_cleaned[numeric_cols])
+        data_cleaned['Cluster'] = labels
+        st.write(f"KMeans Clustering with {n_clusters} clusters")
+        st.write(data_cleaned.head())
+        
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
+        st.pyplot(fig)
+    
+    elif clustering_algorithm == "DBSCAN":
+        eps = st.number_input("Epsilon (eps)", min_value=0.1, max_value=10.0, value=0.5)
+        min_samples = st.number_input("Minimum samples", min_value=1, max_value=10, value=5)
+        dbscan = DBSCAN(eps=eps, min_samples=min_samples)
+        labels = dbscan.fit_predict(data_cleaned[numeric_cols])
+        data_cleaned['Cluster'] = labels
+        st.write(f"DBSCAN Clustering with eps={eps} and min_samples={min_samples}")
+        st.write(data_cleaned.head())
+        
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
+        st.pyplot(fig)
+
+elif task == "Prediction":
+    st.markdown('<h3 class="subheader">Prediction</h3>', unsafe_allow_html=True)
+    
+    # Choix de l'algorithme de prédiction
+    prediction_algorithm = st.selectbox("Select a prediction algorithm", ("Linear Regression", "Logistic Regression"))
+    
+    target_column = st.selectbox("Select the target column", data_cleaned.columns)
+    
+    X = data_cleaned.drop(columns=[target_column])
+    y = data_cleaned[target_column]
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    
+    if prediction_algorithm == "Linear Regression":
+        model = LinearRegression()
+        model.fit(X_train, y_train)
+        predictions = model.predict(X_test)
+        
+        st.write("Linear Regression Results")
+        st.write(f"Mean Squared Error: {mean_squared_error(y_test, predictions)}")
+        st.write(f"R^2 Score: {model.score(X_test, y_test)}")
+        
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.scatterplot(x=y_test, y=predictions, ax=ax)
+        ax.set_xlabel("Actual Values")
+        ax.set_ylabel("Predicted Values")
+        st.pyplot(fig)
+    
+    elif prediction_algorithm == "Logistic Regression":
+        model = LogisticRegression()
+        model.fit(X_train, y_train)
+        predictions = model.predict(X_test)
+        
+        st.write("Logistic Regression Results")
+        st.write(f"Accuracy: {accuracy_score(y_test, predictions)}")
+        
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.heatmap(pd.crosstab(y_test, predictions), annot=True, fmt="d", cmap="YlGnBu", ax=ax)
+        ax.set_xlabel("Predicted Values")
+        ax.set_ylabel("Actual Values")
+        st.pyplot(fig)
+
         
 
