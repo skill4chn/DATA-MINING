@@ -1,6 +1,6 @@
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, mean_squared_error
+from sklearn.metrics import accuracy_score, mean_squared_error, roc_curve, roc_auc_score
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -9,10 +9,13 @@ import seaborn as sns
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.cluster import KMeans, DBSCAN
+from scipy.stats import linregress
 
 # Page configuration
 st.set_page_config(page_title="Data Mining Project", page_icon=":bar_chart:", layout="wide")
-
+st.sidebar.title("Project Data Mining")
+st.sidebar.write("Nathanaël RAKOTO")
+st.sidebar.write("Jefferson LIN")
 st.markdown("""
     <style>
     .title {
@@ -167,6 +170,9 @@ if uploaded_file:
         
         if clustering_algorithm == "KMeans":
             n_clusters = st.number_input("Number of clusters (K)", min_value=2, max_value=10, value=3)
+            x_column = st.selectbox("Select the X-axis column for the plot", numeric_cols, key='kmeans_x')
+            y_column = st.selectbox("Select the Y-axis column for the plot", numeric_cols, key='kmeans_y')
+            
             kmeans = KMeans(n_clusters=n_clusters)
             labels = kmeans.fit_predict(data_cleaned[numeric_cols])
             data_cleaned['Cluster'] = labels
@@ -174,12 +180,17 @@ if uploaded_file:
             st.write(data_cleaned.head())
             
             fig, ax = plt.subplots(figsize=(10, 6))
-            sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
+            sns.scatterplot(x=data_cleaned[x_column], y=data_cleaned[y_column], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
+            ax.set_xlabel(x_column, fontsize=12)  
+            ax.set_ylabel(y_column, fontsize=12)  
             st.pyplot(fig)
         
         elif clustering_algorithm == "DBSCAN":
             eps = st.number_input("Epsilon (eps)", min_value=0.1, max_value=10.0, value=0.5)
             min_samples = st.number_input("Minimum samples", min_value=1, max_value=10, value=5)
+            x_column = st.selectbox("Select the X-axis column for the plot", numeric_cols, key='dbscan_x')
+            y_column = st.selectbox("Select the Y-axis column for the plot", numeric_cols, key='dbscan_y')
+            
             dbscan = DBSCAN(eps=eps, min_samples=min_samples)
             labels = dbscan.fit_predict(data_cleaned[numeric_cols])
             data_cleaned['Cluster'] = labels
@@ -187,49 +198,93 @@ if uploaded_file:
             st.write(data_cleaned.head())
             
             fig, ax = plt.subplots(figsize=(10, 6))
-            sns.scatterplot(x=data_cleaned[numeric_cols[0]], y=data_cleaned[numeric_cols[1]], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
+            sns.scatterplot(x=data_cleaned[x_column], y=data_cleaned[y_column], hue='Cluster', data=data_cleaned, palette='viridis', ax=ax)
+            ax.set_xlabel(x_column, fontsize=12) 
+            ax.set_ylabel(y_column, fontsize=12) 
             st.pyplot(fig)
 
     elif task == "Prediction":
         st.markdown('<h3 class="subheader">Prediction</h3>', unsafe_allow_html=True)
         prediction_algorithm = st.selectbox("Select a prediction algorithm", ("Linear Regression", "Logistic Regression"))
         
-        target_column = st.selectbox("Select the target column", data_cleaned.columns)
-        
-        X = data_cleaned.drop(columns=[target_column])
-        y = data_cleaned[target_column]
-        
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
         
         if prediction_algorithm == "Linear Regression":
+            target_column = st.selectbox("Select the target column", data_cleaned.columns)
+            X = data_cleaned.drop(columns=[target_column])
+            y = data_cleaned[target_column]
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+            
             model = LinearRegression()
             model.fit(X_train, y_train)
             predictions = model.predict(X_test)
             
+            correct_predictions = np.sum(predictions == y_test)
+            incorrect_predictions = len(y_test) - correct_predictions
+            st.write("Number of correct predictions:", correct_predictions)
+            st.write("Number of incorrect predictions:", incorrect_predictions)
+            
             st.write("Linear Regression Results")
             st.write(f"Mean Squared Error: {mean_squared_error(y_test, predictions)}")
             st.write(f"R^2 Score: {model.score(X_test, y_test)}")
-            
+
             fig, ax = plt.subplots(figsize=(10, 6))
-            sns.scatterplot(x=y_test, y=predictions, ax=ax)
-            ax.set_xlabel("Actual Values")
-            ax.set_ylabel("Predicted Values")
+            sns.scatterplot(x=y_test, y=predictions, ax=ax, alpha=0.3)
+            slope, intercept, r_value, p_value, std_err = linregress(y_test, predictions)
+            x_vals = np.array(ax.get_xlim())
+            y_vals = intercept + slope * x_vals
+            plt.plot(x_vals, y_vals, color='red')
+            plt.xlabel('Actual Values')
+            plt.ylabel('Predicted Values')
+            plt.title('Actual vs Predicted Values')
+            plt.legend()
             st.pyplot(fig)
-        
+    
         elif prediction_algorithm == "Logistic Regression":
+            target_cols = [col for col in data_cleaned.columns if set(data_cleaned[col].dropna().unique()) <= {0, 1}]
+            if len(target_cols) == 0:
+                st.error("No appropriate target column found for the selected algorithm.")
+            else:
+                target_column = st.selectbox("Select the target column", target_cols)   
+                
+            X = data_cleaned.drop(columns=[target_column])
+            y = data_cleaned[target_column]
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
             model = LogisticRegression()
             model.fit(X_train, y_train)
             predictions = model.predict(X_test)
+            predictions_proba = model.predict_proba(X_test)[:, 1]
+            correct_predictions = np.sum(predictions == y_test)
+            incorrect_predictions = len(y_test) - correct_predictions
+            st.write("Number of correct predictions:", correct_predictions)
+            st.write("Number of incorrect predictions:", incorrect_predictions)
             
-            st.write("Logistic Regression Results")
-            st.write(f"Accuracy: {accuracy_score(y_test, predictions)}")
-            
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.heatmap(pd.crosstab(y_test, predictions), annot=True, fmt="d", cmap="YlGnBu", ax=ax)
-            ax.set_xlabel("Predicted Values")
-            ax.set_ylabel("Actual Values")
-            st.pyplot(fig)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write("Logistic Regression Results")
+                st.write(f"Accuracy: {accuracy_score(y_test, predictions)}")
 
+                fpr, tpr, thresholds = roc_curve(y_test, predictions_proba)
+                roc_auc = roc_auc_score(y_test, predictions_proba)
+                
+                fig, ax = plt.subplots(figsize=(10, 6))
+                ax.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+                ax.plot([0, 1], [0, 1], color='gray', lw=2, linestyle='--')
+                ax.set_xlim([0.0, 1.0])
+                ax.set_ylim([0.0, 1.05])
+                ax.set_xlabel('False Positive Rate')
+                ax.set_ylabel('True Positive Rate')
+                ax.set_title('Receiver Operating Characteristic')
+                ax.legend(loc="lower right")
+                st.pyplot(fig)
+
+            with col2:
+                fig, ax = plt.subplots(figsize=(10, 6))
+                sns.heatmap(pd.crosstab(y_test, predictions), annot=True, fmt="d", cmap="YlGnBu", ax=ax)
+                ax.set_xlabel("Predicted Values")
+                ax.set_ylabel("Actual Values")
+                st.pyplot(fig)
+            
+            
             
 st.markdown('<div class="footer">© 2024 Issam Falih. All rights reserved.</div>', unsafe_allow_html=True)
 
