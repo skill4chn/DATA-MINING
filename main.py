@@ -12,9 +12,14 @@ import seaborn as sns
 from scipy.stats import linregress
 
 st.set_page_config(page_title="Data Mining Project", page_icon=":bar_chart:", layout="wide")
-st.sidebar.title("Project Data Mining")
-st.sidebar.write("Nathanaël RAKOTO")
-st.sidebar.write("Jefferson LIN")
+st.sidebar.title(":male-technologist: Credits :writing_hand:")
+st.sidebar.markdown("Name: Jefferson LIN")
+st.sidebar.markdown("Linkedin: [Jefferson LIN](https://www.linkedin.com/in/jefferson-lin-b718711b7/)")
+st.sidebar.markdown("Github: [Jefferson LIN](https://github.com/skill4chn)")
+st.sidebar.markdown("Name: Nathanaël RAKOTO")
+st.sidebar.markdown("Linkedin: [Nathanaël RAKOTO](www.linkedin.com/in/nathanael-rakoto)")
+st.sidebar.markdown("Github: [Nathanaël RAKOTO](https://github.com/Clutchboyyyy)")
+st.sidebar.markdown("Class: BIA2")
 st.markdown("""
     <style>
     .title {
@@ -39,6 +44,13 @@ st.markdown("""
         text-align: center;
         padding: 10px;
         border-top: 1px solid #E0E0E0;
+    }
+    .sidebar .sidebar-content a {
+        text-decoration: none;
+        color: inherit;
+    }
+    .sidebar .sidebar-content a:hover {
+        text-decoration: underline;
     }
     </style>
 """, unsafe_allow_html=True)

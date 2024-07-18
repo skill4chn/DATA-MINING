@@ -5,7 +5,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 def load_data(uploaded_file):
     file_type = uploaded_file.name.split('.')[-1]
     if file_type == 'csv':
-        separator_option = ','  # Adjust separator if needed
+        separator_option = ',' 
         data = pd.read_csv(uploaded_file, sep=separator_option)
     else:
         data = pd.read_excel(uploaded_file)
