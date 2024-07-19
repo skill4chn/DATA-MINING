@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from data_processing import handle_missing_values, normalize_data, load_data
-from visualization import plot_histogram, plot_boxplot, plot_2d_correlation, plot_3d_correlation
+from visualization import plot_histogram, plot_boxplot, plot_2d_correlation, plot_3d_correlation, plot_correlation_heatmap
 from clustering import perform_clustering, evaluate_clustering, plot_3d_clusters
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import train_test_split
@@ -12,14 +12,45 @@ import seaborn as sns
 from scipy.stats import linregress
 
 st.set_page_config(page_title="Data Mining Project", page_icon=":bar_chart:", layout="wide")
+
 st.sidebar.title(":male-technologist: Credits :writing_hand:")
-st.sidebar.markdown("Name: Jefferson LIN")
-st.sidebar.markdown("Linkedin: [Jefferson LIN](https://www.linkedin.com/in/jefferson-lin-b718711b7/)")
-st.sidebar.markdown("Github: [Jefferson LIN](https://github.com/skill4chn)")
-st.sidebar.markdown("Name: Nathanaël RAKOTO")
-st.sidebar.markdown("Linkedin: [Nathanaël RAKOTO](www.linkedin.com/in/nathanael-rakoto)")
-st.sidebar.markdown("Github: [Nathanaël RAKOTO](https://github.com/Clutchboyyyy)")
-st.sidebar.markdown("Class: BIA2")
+
+st.sidebar.image("efrei_logo.png", use_column_width=True)
+
+st.sidebar.markdown("""
+    <style>
+    .sidebar-content {
+        font-family: 'Arial', sans-serif;
+        color: #FFFFFF;
+        padding: 10px;
+    }
+    .sidebar-content h3 {
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+    .sidebar-content a {
+        color: #1E90FF;
+        text-decoration: none;
+    }
+    .sidebar-content a:hover {
+        text-decoration: underline;
+    }
+    .sidebar-content .class-info {
+        font-weight: bold;
+        margin-top: 10px;
+    }
+    </style>
+    <div class="sidebar-content">
+        <h3>Name: Jefferson LIN</h3>
+        <p>Linkedin: <a href="https://www.linkedin.com/in/jefferson-lin-b718711b7/">Jefferson LIN</a></p>
+        <p>Github: <a href="https://github.com/skill4chn">Jefferson LIN</a></p>
+        <h3>Name: Nathanaël RAKOTO</h3>
+        <p>Linkedin: <a href="https://www.linkedin.com/in/nathanael-rakoto">Nathanaël RAKOTO</a></p>
+        <p>Github: <a href="https://github.com/Clutchboyyyy">Nathanaël RAKOTO</a></p>
+        <p class="class-info">Class: BIA2</p>
+    </div>
+""", unsafe_allow_html=True)
+
 st.markdown("""
     <style>
     .title {
@@ -45,13 +76,6 @@ st.markdown("""
         padding: 10px;
         border-top: 1px solid #E0E0E0;
     }
-    .sidebar .sidebar-content a {
-        text-decoration: none;
-        color: inherit;
-    }
-    .sidebar .sidebar-content a:hover {
-        text-decoration: underline;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -67,9 +91,9 @@ if uploaded_file:
     col1, col2 = st.columns(2)
     with col1:
         st.markdown('<h2 class="subheader">Preview of the data</h2>', unsafe_allow_html=True)
-        st.markdown('<h4 class="subheader">10 first rows</h4>', unsafe_allow_html=True)
+        st.markdown('<h4 class="subheader">5 first rows</h4>', unsafe_allow_html=True)
         st.write(data.head())
-        st.markdown('<h4 class="subheader">10 last rows</h4>', unsafe_allow_html=True)
+        st.markdown('<h4 class="subheader">5 last rows</h4>', unsafe_allow_html=True)
         st.write(data.tail())
     
     with col2:
@@ -113,7 +137,9 @@ if uploaded_file:
             selected_column_box = st.selectbox("Select a column for box plot visualization", numeric_cols, key='box_plot')
             if selected_column_box:
                 plot_boxplot(data_cleaned, selected_column_box)
-            
+    st.markdown('<h3 class="subheader">Correlation Heatmap for All Columns</h3>', unsafe_allow_html=True)
+    plot_correlation_heatmap(data_cleaned)
+
     st.markdown('<h3 class="subheader">2D Correlation Visualization</h3>', unsafe_allow_html=True)
     if len(numeric_cols) > 1:
         x_col_2d = st.selectbox("Select the X-axis column for the 2D plot", numeric_cols, key='2d_x')
@@ -198,10 +224,5 @@ if uploaded_file:
             ax.legend(loc="lower right")
             st.pyplot(fig)
 
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.heatmap(pd.crosstab(y_test, predictions), annot=True, fmt="d", cmap="YlGnBu", ax=ax)
-            ax.set_xlabel("Predicted Values")
-            ax.set_ylabel("Actual Values")
-            st.pyplot(fig)
 
 st.markdown('<div class="footer">© 2024 Data Mining Issam Falih. All rights reserved.</div>', unsafe_allow_html=True)
