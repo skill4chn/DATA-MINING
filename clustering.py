@@ -19,7 +19,7 @@ def perform_clustering(data, numeric_cols, algorithm):
         st.write(data.head())
         
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(x=data[x_column], y=data[y_column], hue='Cluster', data=data, palette='viridis', ax=ax)
+        sns.scatterplot(x=data[x_column], y=data[y_column], hue='Cluster', data=data, palette='viridis', ax=ax, alpha=0.4)
         ax.set_xlabel(x_column, fontsize=12)  
         ax.set_ylabel(y_column, fontsize=12)  
         st.pyplot(fig)
@@ -38,7 +38,7 @@ def perform_clustering(data, numeric_cols, algorithm):
         st.write(data.head())
         
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(x=data[x_column], y=data[y_column], hue='Cluster', data=data, palette='viridis', ax=ax)
+        sns.scatterplot(x=data[x_column], y=data[y_column], hue='Cluster', data=data, palette='viridis', ax=ax, alpha=0.4)
         ax.set_xlabel(x_column, fontsize=12) 
         ax.set_ylabel(y_column, fontsize=12) 
         st.pyplot(fig)

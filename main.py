@@ -165,13 +165,12 @@ if uploaded_file:
     elif task == "Prediction":
         st.markdown('<h3 class="subheader">Prediction</h3>', unsafe_allow_html=True)
         prediction_algorithm = st.selectbox("Select a prediction algorithm", ("Linear Regression", "Logistic Regression"))
-        target_column = st.selectbox("Select the target column", data_cleaned.columns)
-        
-        X = data_cleaned.drop(columns=[target_column])
-        y = data_cleaned[target_column]
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
         
         if prediction_algorithm == "Linear Regression":
+            target_column = st.selectbox("Select the target column", data_cleaned.columns)
+            X = data_cleaned.drop(columns=[target_column])
+            y = data_cleaned[target_column]
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
             model = LinearRegression()
             model.fit(X_train, y_train)
             predictions = model.predict(X_test)
