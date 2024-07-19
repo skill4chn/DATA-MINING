@@ -59,7 +59,7 @@ st.markdown('<h1 class="title">Data Mining Project</h1>', unsafe_allow_html=True
 st.markdown('<p class="description">By Issam Falih</p>', unsafe_allow_html=True)
 
 st.markdown('<h2 class="header">Part I: Initial Data Exploration</h2>', unsafe_allow_html=True)
-uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
+uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx", "data"])
 
 if uploaded_file:
     data, numeric_cols, non_numeric_cols = load_data(uploaded_file)

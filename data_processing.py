@@ -7,8 +7,10 @@ def load_data(uploaded_file):
     if file_type == 'csv':
         separator_option = ',' 
         data = pd.read_csv(uploaded_file, sep=separator_option)
-    else:
+    elif file_type == 'xlsx':
         data = pd.read_excel(uploaded_file)
+    elif file_type == 'data':
+        data = pd.read_csv(uploaded_file)
 
     for col in data.columns:
         try:
