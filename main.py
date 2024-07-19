@@ -111,8 +111,8 @@ if uploaded_file:
     missing_values_strategy = st.selectbox("Select a strategy for handling missing values:", 
                                            ("Delete rows", "Delete columns", "Impute with mean", "Impute with median", "Impute with mode", "KNN Imputation"))
     data_cleaned = handle_missing_values(data, numeric_cols, non_numeric_cols, missing_values_strategy)
-    st.write(f"Dataset after handling missing values using '{missing_values_strategy}':")
-    st.write(data_cleaned.head())
+    st.write("Dataset after handling missing values: ")
+    st.write(data.isnull().sum())
 
     st.markdown('<h3 class="subheader">Data Normalization</h3>', unsafe_allow_html=True)
     normalization_strategy = st.selectbox("Select a normalization method:", 
