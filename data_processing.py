@@ -11,7 +11,11 @@ def load_data(uploaded_file):
         data = pd.read_excel(uploaded_file)
     elif file_type == 'data':
         data = pd.read_csv(uploaded_file)
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 3ad7b508272b8c44fd2d85b8191fc11a5d243df3
     for col in data.columns:
         try:
             data[col] = data[col].str.replace(',', '.').astype(float)
